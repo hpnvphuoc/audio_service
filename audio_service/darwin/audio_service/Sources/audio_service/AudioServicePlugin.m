@@ -176,18 +176,6 @@ static NSMutableDictionary *nowPlayingInfo = nil;
         repeatMode = stateMap[@"repeatMode"];
         shuffleMode = stateMap[@"shuffleMode"];
         updateTime = [NSNumber numberWithLongLong: msSinceEpoch];
-        if (playing && !commandCenter) {
-#if TARGET_OS_IPHONE
-            [AVAudioSession sharedInstance];
-#endif
-            [self activateCommandCenter];
-        }
-        [self updateControls];
-        if (playing != oldPlaying ||
-            speed.doubleValue != oldSpeed.doubleValue ||
-            position.longLongValue != oldPosition.longLongValue) {
-            [self updateNowPlayingInfo];
-        }
         result(@{});
     } else if ([@"setQueue" isEqualToString:call.method]) {
         result(@{});
@@ -219,7 +207,6 @@ static NSMutableDictionary *nowPlayingInfo = nil;
                 }
             }
         }
-        [self updateNowPlayingInfo];
         result(@{});
     } else if ([@"setPlaybackInfo" isEqualToString:call.method]) {
         result(@{});
@@ -269,55 +256,7 @@ static NSMutableDictionary *nowPlayingInfo = nil;
 }
 
 - (void) updateNowPlayingInfo {
-    BOOL updated = NO;
-    if (mediaItem) {
-        updated |= [self updateNowPlayingField:MPMediaItemPropertyTitle value:mediaItem[@"title"]];
-        updated |= [self updateNowPlayingField:MPMediaItemPropertyAlbumTitle value:mediaItem[@"album"]];
-        updated |= [self updateNowPlayingField:MPMediaItemPropertyArtist value:mediaItem[@"artist"]];
-        NSNumber *duration = mediaItem[@"duration"];
-        if (duration == (id)[NSNull null]) duration = @(0);
-        updated |= [self updateNowPlayingField:MPMediaItemPropertyPlaybackDuration value:([NSNumber numberWithDouble: ([duration doubleValue] / 1000)])];
-        if (@available(iOS 3.0, macOS 10.13.2, *)) {
-            updated |= [self updateNowPlayingField:MPMediaItemPropertyArtwork value:artwork];
-        }
-    }
-
-    if (@available(iOS 10.0, macOS 10.12.2, *)) {
-        updated |= [self updateNowPlayingField:MPNowPlayingInfoPropertyMediaType value:@(MPNowPlayingInfoMediaTypeAudio)];
-    }
-    updated |= [self updateNowPlayingField:MPNowPlayingInfoPropertyPlaybackRate value:(playing ? speed : [NSNumber numberWithDouble: 0.0])];
-    updated |= [self updateNowPlayingField:MPNowPlayingInfoPropertyDefaultPlaybackRate value:(playing ? speed : [NSNumber numberWithDouble: 0.0])];
-    updated |= [self updateNowPlayingField:MPNowPlayingInfoPropertyElapsedPlaybackTime value:[NSNumber numberWithDouble:([position doubleValue] / 1000)]];
-    MPNowPlayingInfoCenter *center = [MPNowPlayingInfoCenter defaultCenter];
-#if TARGET_OS_OSX
-    if (@available(iOS 13.0, macOS 10.12.2, *)) {
-        center.playbackState = playing ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused;
-    }
-#endif
-    if (@available(iOS 10.0, macOS 10.12.2, *)) {
-        updated |= [self updateNowPlayingField:MPNowPlayingInfoPropertyIsLiveStream value:mediaItem[@"isLive"]];
-    }
-    if (updated) {
-        //NSLog(@"### updating nowPlayingInfo");
-        center.nowPlayingInfo = nowPlayingInfo;
-    }
-  
-    // TODO: List of all unused "nowPlayingInfo" keys, we might want to use these at some point:
-    //
-    // * MPNowPlayingInfoCollectionIdentifier
-    // * MPNowPlayingInfoPropertyAvailableLanguageOptions
-    // * MPNowPlayingInfoPropertyAssetURL
-    // * MPNowPlayingInfoPropertyChapterCount
-    // * MPNowPlayingInfoPropertyChapterNumber
-    // * MPNowPlayingInfoPropertyCurrentLanguageOptions
-    // * MPNowPlayingInfoPropertyDefaultPlaybackRate
-    // * MPNowPlayingInfoPropertyCurrentPlaybackDate
-    // * MPNowPlayingInfoPropertyExternalContentIdentifier
-    // * MPNowPlayingInfoPropertyExternalUserProfileIdentifier
-    // * MPNowPlayingInfoPropertyPlaybackProgress
-    // * MPNowPlayingInfoPropertyPlaybackQueueCount
-    // * MPNowPlayingInfoPropertyPlaybackQueueIndex
-    // * MPNowPlayingInfoPropertyServiceIdentifier
+    // Disabled: prevents Now Playing widget from appearing on lock screen
 }
 
 - (void) updateControls {
